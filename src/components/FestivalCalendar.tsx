@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { festivals, Festival, getFestivalsByRegion, getFestivalsByState, getFestivalsByReligion } from '@/data/festivalData';
 import { regions } from '@/data/culturalData';
+import { regionStates } from '@/data/regionStates';
 import { format } from 'date-fns';
 
 const religions = ["All", "Hinduism", "Islam", "Christianity", "Sikhism", "Buddhism", "Jainism", "Cultural"];
