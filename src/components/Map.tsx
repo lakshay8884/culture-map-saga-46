@@ -1,133 +1,12 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { culturalSites } from '@/data/culturalData';
 import { useNavigate } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
-import { loadGoogleMapsScript, safeRemoveScript, resetGoogleMapsLoading } from '@/utils/mapUtils';
-
-declare global {
-  interface Window {
-    google: any;
-    initMap: () => void;
-  }
-}
 
 const Map: React.FC = () => {
   const [selectedSite, setSelectedSite] = useState<string | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<google.maps.Marker[]>([]);
   const navigate = useNavigate();
-
-  const createMarkers = () => {
-    if (!mapInstanceRef.current || !window.google?.maps?.Marker) {
-      console.log("Cannot create markers, map instance or Marker not available");
-      return;
-    }
-    
-    // Clear existing markers
-    markersRef.current.forEach(marker => marker.setMap(null));
-    markersRef.current = [];
-    
-    // Create new markers
-    culturalSites.forEach(site => {
-      const marker = new window.google.maps.Marker({
-        position: { lat: site.coordinates.lat, lng: site.coordinates.lng },
-        map: mapInstanceRef.current,
-        title: site.name,
-      });
-
-      marker.addListener('click', () => {
-        handleMarkerClick(site.id);
-      });
-
-      markersRef.current.push(marker);
-    });
-  };
-
-  const initializeMap = async () => {
-    if (!mapContainerRef.current) {
-      console.log("Map container ref not available");
-      return;
-    }
-    
-    try {
-      if (!window.google?.maps?.importLibrary) {
-        console.error('Google Maps API not loaded correctly');
-        return;
-      }
-
-      const { Map } = await window.google.maps.importLibrary("maps") as google.maps.MapsLibrary;
-      const indiaCenter = { lat: 20.5937, lng: 78.9629 };
-      
-      mapInstanceRef.current = new Map(mapContainerRef.current, {
-        center: indiaCenter,
-        zoom: 4,
-        mapId: 'DEMO_MAP_ID',
-        disableDefaultUI: true,
-        zoomControl: true,
-      });
-
-      createMarkers();
-      setMapLoaded(true);
-      console.log("Map initialized successfully");
-    } catch (error) {
-      console.error('Error initializing map:', error);
-    }
-  };
-
-  useEffect(() => {
-    // Define the global callback function for the Google Maps script
-    window.initMap = async function() {
-      console.log("initMap callback triggered");
-      await initializeMap();
-    };
-
-    // Load the Google Maps script
-    loadGoogleMapsScript('initMap').catch(error => {
-      console.error("Error loading Google Maps:", error);
-    });
-
-    // Cleanup function
-    return () => {
-      console.log("Map component unmounting, cleaning up resources");
-      
-      // Clear markers
-      markersRef.current.forEach(marker => {
-        if (marker) marker.setMap(null);
-      });
-      markersRef.current = [];
-      
-      // Clear map instance
-      mapInstanceRef.current = null;
-      
-      // Clean up the global initMap function
-      if ('initMap' in window) {
-        // @ts-ignore
-        window.initMap = undefined;
-        console.log("Cleaned up global initMap function");
-      }
-      
-      // Reset the loading state
-      resetGoogleMapsLoading();
-    };
-  }, []);
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'monument':
-        return 'bg-terracotta';
-      case 'festival':
-        return 'bg-gold';
-      case 'art':
-        return 'bg-emerald';
-      case 'heritage':
-        return 'bg-deepBlue';
-      default:
-        return 'bg-gray-500';
-    }
-  };
 
   const handleMarkerClick = (id: string) => {
     setSelectedSite(id);
@@ -142,16 +21,30 @@ const Map: React.FC = () => {
   };
 
   return (
-    <div className="relative map-container overflow-hidden">
-      <div className="w-full h-full" id="map" ref={mapContainerRef}>
-        {!mapLoaded && (
-          <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-            <div className="text-center text-gray-500">
-              <p className="mb-2">Loading Map...</p>
-              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
-            </div>
-          </div>
-        )}
+    <div className="relative map-container overflow-hidden rounded-lg">
+      <div className="w-full h-full" id="map">
+        {/* Static map image of India */}
+        <div className="relative w-full" style={{ height: "400px" }}>
+          <img 
+            src="https://i.imgur.com/HbM2ZPV.jpg" 
+            alt="Map of India showing cultural sites" 
+            className="w-full h-full object-cover"
+          />
+          
+          {/* Static marker dots for cultural sites */}
+          {culturalSites.map(site => (
+            <button
+              key={site.id}
+              className="absolute w-4 h-4 rounded-full bg-primary hover:bg-primary/80 transition-colors cursor-pointer shadow-md"
+              style={{
+                left: `${(site.coordinates.lng - 65) * 6 + 50}%`,
+                top: `${(site.coordinates.lat - 5) * 6 + 20}%`,
+              }}
+              onClick={() => handleMarkerClick(site.id)}
+              aria-label={site.name}
+            />
+          ))}
+        </div>
       </div>
       
       {selectedSite && (
@@ -189,12 +82,9 @@ const Map: React.FC = () => {
         </div>
       )}
       
-      {!selectedSite && !mapLoaded && (
-        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-gray-400 dark:text-gray-500 pointer-events-none">
-          <p className="mb-2 font-medium">Interactive Map Preview</p>
-          <p className="text-sm">Click on markers to explore cultural sites</p>
-        </div>
-      )}
+      <div className="absolute bottom-2 right-2 text-xs text-white bg-black/50 px-2 py-1 rounded">
+        Static Map - Not Interactive
+      </div>
     </div>
   );
 };

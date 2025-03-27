@@ -1,9 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MapPin, ArrowLeft, Star, Globe, Info, ExternalLink } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { culturalSites } from '@/data/culturalData';
-import { loadGoogleMapsScript, MAPS_API_KEY, resetGoogleMapsLoading } from '@/utils/mapUtils';
 
 // Map of site IDs to 360° view URLs
 const virtualTourLinks: Record<string, string> = {
@@ -12,22 +11,11 @@ const virtualTourLinks: Record<string, string> = {
   'meenakshi-temple': 'https://www.view360.in/vtour-3dvr-madurai.html'
 };
 
-declare global {
-  interface Window {
-    google: any;
-    initDetailMap: () => void;
-  }
-}
-
 const Detail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [site, setSite] = useState(culturalSites.find(site => site.id === id));
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const detailMapContainerRef = useRef<HTMLDivElement>(null);
-  const detailMapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
   
   // Check for user's preferred color scheme on initial load
   useEffect(() => {
@@ -49,101 +37,10 @@ const Detail: React.FC = () => {
     });
   };
 
-  // Initialize the map for the detail page
-  const initializeDetailMap = async () => {
-    if (!detailMapContainerRef.current || !site) return;
-    
-    try {
-      if (!window.google?.maps?.importLibrary) {
-        console.error('Google Maps API not loaded correctly');
-        return;
-      }
-
-      const { Map, Marker } = await window.google.maps.importLibrary("maps") as google.maps.MapsLibrary;
-      const siteLocation = { 
-        lat: site.coordinates.lat, 
-        lng: site.coordinates.lng 
-      };
-      
-      detailMapInstanceRef.current = new Map(detailMapContainerRef.current, {
-        center: siteLocation,
-        zoom: 14,
-        mapId: 'DEMO_MAP_ID',
-        zoomControl: true,
-      });
-
-      // Add a marker for the site location
-      if (Marker) {
-        // Remove previous marker if it exists
-        if (markerRef.current) {
-          markerRef.current.setMap(null);
-        }
-        
-        markerRef.current = new Marker({
-          position: siteLocation,
-          map: detailMapInstanceRef.current,
-          title: site.name,
-        });
-      }
-      
-      setMapLoaded(true);
-    } catch (error) {
-      console.error('Error initializing detail map:', error);
-    }
-  };
-
   useEffect(() => {
     setSite(culturalSites.find(site => site.id === id));
     window.scrollTo(0, 0);
-    
-    // Reset map loaded state
-    setMapLoaded(false);
-    
-    return () => {
-      // Clean up resources when id changes
-      cleanupMap();
-    };
   }, [id]);
-
-  // Clean up map resources
-  const cleanupMap = () => {
-    // Remove marker
-    if (markerRef.current) {
-      markerRef.current.setMap(null);
-      markerRef.current = null;
-    }
-    
-    // Reset map instance
-    detailMapInstanceRef.current = null;
-  };
-
-  useEffect(() => {
-    // Define the global initDetailMap function
-    window.initDetailMap = async function() {
-      await initializeDetailMap();
-    };
-
-    if (site) {
-      // Load Google Maps
-      loadGoogleMapsScript('initDetailMap').catch(error => {
-        console.error("Error loading Google Maps:", error);
-      });
-    }
-    
-    return () => {
-      // Clean up resources
-      cleanupMap();
-      
-      // Remove global initDetailMap function
-      if ('initDetailMap' in window) {
-        // @ts-ignore
-        window.initDetailMap = undefined;
-      }
-      
-      // Reset the loading state
-      resetGoogleMapsLoading();
-    };
-  }, [site]);
 
   if (!site) {
     return (
@@ -267,20 +164,29 @@ const Detail: React.FC = () => {
                 </div>
               </div>
 
-              {/* Map Location */}
+              {/* Map Location - Static Version */}
               <div className="glass-card p-6 rounded-xl mb-8">
                 <h2 className="text-2xl font-serif font-semibold mb-4 text-gray-900 dark:text-white">Location</h2>
                 <div className="h-64 rounded-lg overflow-hidden relative">
-                  <div id="detailMap" ref={detailMapContainerRef} className="w-full h-full">
-                    {!mapLoaded && (
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800">
-                        <div className="text-center">
-                          <MapPin className="w-8 h-8 mx-auto mb-2" />
-                          <p>Loading Map - {site?.location}</p>
-                          <p className="text-sm mt-1">Coordinates: {site?.coordinates.lat}, {site?.coordinates.lng}</p>
-                        </div>
-                      </div>
-                    )}
+                  <div className="w-full h-full relative">
+                    {/* Static map image with a pin for the location */}
+                    <img 
+                      src={`https://i.imgur.com/GcZEQRU.jpg`} 
+                      alt={`Map showing location of ${site.name}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <div 
+                      className="absolute w-6 h-6 transform -translate-x-1/2 -translate-y-1/2"
+                      style={{
+                        left: '50%',
+                        top: '50%',
+                      }}
+                    >
+                      <MapPin className="w-6 h-6 text-primary drop-shadow-lg" />
+                    </div>
+                    <div className="absolute bottom-2 right-2 text-xs bg-black/50 text-white px-2 py-1 rounded">
+                      {site.location} - {site.coordinates.lat.toFixed(2)}, {site.coordinates.lng.toFixed(2)}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -376,7 +282,7 @@ const Detail: React.FC = () => {
       <footer className="bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-8">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            © {new Date().getFullYear()} Astiva - Seek the Soul of India. All rights reserved.
+            © {new Date().getFullYear()} Astitva - Seek the Soul of India. All rights reserved.
           </p>
         </div>
       </footer>
