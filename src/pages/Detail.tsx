@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MapPin, ArrowLeft, Star, Globe, Info, ExternalLink } from 'lucide-react';
@@ -12,13 +11,21 @@ const virtualTourLinks: Record<string, string> = {
   'meenakshi-temple': 'https://www.view360.in/vtour-3dvr-madurai.html'
 };
 
+declare global {
+  interface Window {
+    google: any;
+    initDetailMap: () => void;
+  }
+}
+
 const Detail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [site, setSite] = useState(culturalSites.find(site => site.id === id));
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const detailMapContainerRef = useRef<HTMLDivElement>(null);
+  const detailMapInstanceRef = useRef<any>(null);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
   
   // Check for user's preferred color scheme on initial load
@@ -48,70 +55,65 @@ const Detail: React.FC = () => {
 
   useEffect(() => {
     if (!site) return;
-    
+
     // Reset map loaded state when site changes
     setMapLoaded(false);
     
+    // Define the initDetailMap function
+    window.initDetailMap = async function() {
+      if (!detailMapContainerRef.current || !site) return;
+      setMapLoaded(true);
+
+      try {
+        if (window.google?.maps?.importLibrary) {
+          const { Map } = await window.google.maps.importLibrary("maps");
+          const siteLocation = { 
+            lat: site.coordinates.lat, 
+            lng: site.coordinates.lng 
+          };
+          
+          detailMapInstanceRef.current = new Map(detailMapContainerRef.current, {
+            center: siteLocation,
+            zoom: 14,
+            mapId: 'DEMO_MAP_ID',
+            zoomControl: true,
+          });
+
+          // Add a marker for the site location
+          if (window.google?.maps?.Marker) {
+            new window.google.maps.Marker({
+              position: siteLocation,
+              map: detailMapInstanceRef.current,
+              title: site.name,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing detail map:', error);
+      }
+    };
+
     // Check if Google Maps script is already loaded
     const isScriptLoaded = document.querySelector('script[src*="maps.googleapis.com"]');
     
     if (!isScriptLoaded) {
       const script = document.createElement('script');
-      script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&libraries=maps&v=beta";
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initDetailMap&libraries=maps&v=weekly`;
       script.defer = true;
       script.async = true;
-      script.onload = () => {
-        setMapLoaded(true);
-        
-        // Create and insert the gmp-map element after the script is loaded
-        if (mapContainerRef.current && site) {
-          // Clear existing content
-          mapContainerRef.current.innerHTML = '';
-          
-          // Create the gmp-map element
-          const gmpMap = document.createElement('gmp-map');
-          gmpMap.setAttribute('center', `${site.coordinates.lat},${site.coordinates.lng}`);
-          gmpMap.setAttribute('zoom', '14');
-          gmpMap.setAttribute('map-id', 'DEMO_MAP_ID');
-          gmpMap.className = 'w-full h-full';
-          
-          // Append to the container
-          mapContainerRef.current.appendChild(gmpMap);
-        }
-      };
       document.head.appendChild(script);
       scriptRef.current = script;
     } else {
-      setMapLoaded(true);
-      
-      // If script already loaded, create the map element directly
-      setTimeout(() => {
-        if (mapContainerRef.current && site) {
-          // Clear existing content
-          mapContainerRef.current.innerHTML = '';
-          
-          // Create the gmp-map element
-          const gmpMap = document.createElement('gmp-map');
-          gmpMap.setAttribute('center', `${site.coordinates.lat},${site.coordinates.lng}`);
-          gmpMap.setAttribute('zoom', '14');
-          gmpMap.setAttribute('map-id', 'DEMO_MAP_ID');
-          gmpMap.className = 'w-full h-full';
-          
-          // Append to the container
-          mapContainerRef.current.appendChild(gmpMap);
-        }
-      }, 100);
+      // If script already loaded, call initDetailMap directly
+      if (window.google?.maps) {
+        window.initDetailMap();
+      }
     }
     
     return () => {
-      // Safe cleanup - only remove the script if it's our script and it's still in the document
+      // Safe cleanup - only remove our script
       if (scriptRef.current && document.head.contains(scriptRef.current)) {
         document.head.removeChild(scriptRef.current);
-      }
-      
-      // Also clean up the map container
-      if (mapContainerRef.current) {
-        mapContainerRef.current.innerHTML = '';
       }
     };
   }, [site]);
@@ -242,7 +244,7 @@ const Detail: React.FC = () => {
               <div className="glass-card p-6 rounded-xl mb-8">
                 <h2 className="text-2xl font-serif font-semibold mb-4 text-gray-900 dark:text-white">Location</h2>
                 <div className="h-64 rounded-lg overflow-hidden relative">
-                  <div ref={mapContainerRef} className="w-full h-full">
+                  <div id="detailMap" ref={detailMapContainerRef} className="w-full h-full">
                     {!mapLoaded && (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800">
                         <div className="text-center">
@@ -352,7 +354,7 @@ const Detail: React.FC = () => {
         </div>
       </footer>
 
-      {/* Image Lightbox (would be enhanced in production) */}
+      {/* Image Lightbox */}
       {activeImageIndex !== null && (
         <div 
           className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"

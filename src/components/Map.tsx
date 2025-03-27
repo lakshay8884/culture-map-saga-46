@@ -4,74 +4,94 @@ import { culturalSites } from '@/data/culturalData';
 import { useNavigate } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 
+declare global {
+  interface Window {
+    google: any;
+    initMap: () => void;
+  }
+}
+
 const Map: React.FC = () => {
   const [selectedSite, setSelectedSite] = useState<string | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Define the initMap function in the global scope
+    window.initMap = async function() {
+      if (!mapContainerRef.current) return;
+      setMapLoaded(true);
+
+      try {
+        // Use dynamic import if available
+        if (window.google?.maps?.importLibrary) {
+          const { Map } = await window.google.maps.importLibrary("maps");
+          const indiaCenter = { lat: 20.5937, lng: 78.9629 };
+          
+          mapInstanceRef.current = new Map(mapContainerRef.current, {
+            center: indiaCenter,
+            zoom: 4,
+            mapId: 'DEMO_MAP_ID',
+            disableDefaultUI: true,
+            zoomControl: true,
+          });
+
+          // Add markers for cultural sites
+          if (window.google?.maps?.Marker) {
+            culturalSites.forEach(site => {
+              const marker = new window.google.maps.Marker({
+                position: { lat: site.coordinates.lat, lng: site.coordinates.lng },
+                map: mapInstanceRef.current,
+                title: site.name,
+              });
+
+              // Add click event to markers
+              marker.addListener('click', () => {
+                handleMarkerClick(site.id);
+              });
+
+              markersRef.current.push(marker);
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing map:', error);
+      }
+    };
+
     // Check if Google Maps script is already loaded
     const isScriptLoaded = document.querySelector('script[src*="maps.googleapis.com"]');
     
     if (!isScriptLoaded) {
       const script = document.createElement('script');
-      script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&libraries=maps&v=beta";
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initMap&libraries=maps&v=weekly`;
       script.defer = true;
       script.async = true;
-      script.onload = () => {
-        setMapLoaded(true);
-        
-        // Create and insert the gmp-map element after the script is loaded
-        if (mapContainerRef.current) {
-          // Clear existing content if any
-          mapContainerRef.current.innerHTML = '';
-          
-          // Create the gmp-map element
-          const gmpMap = document.createElement('gmp-map');
-          gmpMap.setAttribute('center', '20.5937,78.9629');
-          gmpMap.setAttribute('zoom', '4');
-          gmpMap.setAttribute('map-id', 'DEMO_MAP_ID');
-          gmpMap.className = 'w-full h-full';
-          
-          // Append to the container
-          mapContainerRef.current.appendChild(gmpMap);
-        }
-      };
       document.head.appendChild(script);
       scriptRef.current = script;
     } else {
-      setMapLoaded(true);
-      
-      // If script already loaded, create the map element directly
-      setTimeout(() => {
-        if (mapContainerRef.current) {
-          // Clear existing content if any
-          mapContainerRef.current.innerHTML = '';
-          
-          // Create the gmp-map element
-          const gmpMap = document.createElement('gmp-map');
-          gmpMap.setAttribute('center', '20.5937,78.9629');
-          gmpMap.setAttribute('zoom', '4');
-          gmpMap.setAttribute('map-id', 'DEMO_MAP_ID');
-          gmpMap.className = 'w-full h-full';
-          
-          // Append to the container
-          mapContainerRef.current.appendChild(gmpMap);
-        }
-      }, 100);
+      // If script already loaded, call initMap directly
+      if (window.google?.maps) {
+        window.initMap();
+      }
     }
 
     return () => {
-      // Safe cleanup - only remove the script if it's our script and it's still in the document
-      if (scriptRef.current && document.head.contains(scriptRef.current)) {
-        document.head.removeChild(scriptRef.current);
+      // Clean up markers
+      if (markersRef.current.length > 0) {
+        markersRef.current.forEach(marker => {
+          if (marker) marker.setMap(null);
+        });
+        markersRef.current = [];
       }
       
-      // Also clean up the map container
-      if (mapContainerRef.current) {
-        mapContainerRef.current.innerHTML = '';
+      // Safe cleanup - only remove our script
+      if (scriptRef.current && document.head.contains(scriptRef.current)) {
+        document.head.removeChild(scriptRef.current);
       }
     };
   }, []);
@@ -103,13 +123,10 @@ const Map: React.FC = () => {
     navigate(`/detail/${id}`);
   };
 
-  // Calculate center of India approximately
-  const indiaCenter = { lat: 20.5937, lng: 78.9629 };
-
   return (
     <div className="relative map-container overflow-hidden">
-      {/* Google Maps Integration */}
-      <div className="w-full h-full" ref={mapContainerRef}>
+      {/* Google Maps Container */}
+      <div className="w-full h-full" id="map" ref={mapContainerRef}>
         {!mapLoaded && (
           <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
             <div className="text-center text-gray-500">
@@ -120,24 +137,6 @@ const Map: React.FC = () => {
         )}
       </div>
       
-      {/* Map Markers (custom overlay on top of Google Maps) */}
-      <div className="absolute inset-0 pointer-events-none">
-        {culturalSites.map((site) => (
-          <button
-            key={site.id}
-            className={`absolute rounded-full p-1 ${getCategoryColor(site.category)} shadow-md transform transition-transform hover:scale-125 focus:outline-none pointer-events-auto z-10`}
-            style={{
-              left: `${(site.coordinates.lng - 70) * 8 + 50}%`,
-              top: `${(site.coordinates.lat - 10) * 8 + 30}%`,
-            }}
-            onClick={() => handleMarkerClick(site.id)}
-            aria-label={site.name}
-          >
-            <MapPin className="w-4 h-4 text-white" />
-          </button>
-        ))}
-      </div>
-
       {/* Info Popup */}
       {selectedSite && (
         <div 
