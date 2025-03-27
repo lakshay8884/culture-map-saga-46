@@ -98,7 +98,7 @@ export const culturalSites: CulturalSite[] = [
       'The palace has 953 small windows or "Jharokhas" that are decorated with intricate latticework.',
       'The unique honeycomb design was inspired by the crown of Lord Krishna.',
       'Despite its appearance, Hawa Mahal is only one room deep in most places.',
-      'The building's curved architecture allows cool air to circulate, creating a natural ventilation system.'
+      'The building\'s curved architecture allows cool air to circulate, creating a natural ventilation system.'
     ],
     gallery: [
       'https://images.unsplash.com/photo-1624805003860-a3b69e580b0b?ixlib=rb-4.0.3&q=85&fm=jpg&crop=entropy&cs=srgb&w=1200',
@@ -110,7 +110,7 @@ export const culturalSites: CulturalSite[] = [
   {
     id: 'meenakshi-temple',
     name: 'Meenakshi Temple',
-    description: 'The Meenakshi Temple, also referred to as Meenakshi Amman or Minakshi-Sundareshwara Temple, is a historic Hindu temple located on the southern bank of the Vaigai River in Madurai, Tamil Nadu, India. It is dedicated to Goddess Meenakshi, a form of Parvati, and her consort, Lord Sundareshwar, a form of Shiva. The temple is the heart and lifeline of the 2,500-year-old city of Madurai and is a significant symbol of the Tamil people's architecture and culture.',
+    description: 'The Meenakshi Temple, also referred to as Meenakshi Amman or Minakshi-Sundareshwara Temple, is a historic Hindu temple located on the southern bank of the Vaigai River in Madurai, Tamil Nadu, India. It is dedicated to Goddess Meenakshi, a form of Parvati, and her consort, Lord Sundareshwar, a form of Shiva. The temple is the heart and lifeline of the 2,500-year-old city of Madurai and is a significant symbol of the Tamil people\'s architecture and culture.',
     shortDescription: 'Historic temple in Madurai known for its towering gopurams, sculptures, and annual Meenakshi Thirukalyanam festival.',
     location: 'Madurai, Tamil Nadu',
     regionId: 'south',
@@ -164,7 +164,7 @@ export const culturalSites: CulturalSite[] = [
   {
     id: 'diwali-festival',
     name: 'Diwali Festival',
-    description: 'Diwali, or Deepavali, is one of India\'s biggest and most important festivals of the year. The festival gets its name from the row (avali) of clay lamps (deepa) that Indians light outside their homes to symbolize the inner light that protects from spiritual darkness. This festival is as important to Hindus as Christmas is to Christians. Over the centuries, Diwali has become a national festival that's enjoyed by most Indians regardless of faith.',
+    description: 'Diwali, or Deepavali, is one of India\'s biggest and most important festivals of the year. The festival gets its name from the row (avali) of clay lamps (deepa) that Indians light outside their homes to symbolize the inner light that protects from spiritual darkness. This festival is as important to Hindus as Christmas is to Christians. Over the centuries, Diwali has become a national festival that\'s enjoyed by most Indians regardless of faith.',
     shortDescription: 'Festival of lights celebrating the triumph of light over darkness with illuminated homes, fireworks, and family gatherings.',
     location: 'Nationwide',
     regionId: 'north',
