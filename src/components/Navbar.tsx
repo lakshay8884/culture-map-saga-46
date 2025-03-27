@@ -26,11 +26,13 @@ const Navbar: React.FC<NavbarProps> = ({ toggleTheme, isDarkMode }) => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-terracotta to-deepBlue flex items-center justify-center text-white font-bold">IC</div>
-            <span className="text-xl font-serif font-bold hidden md:block">
-              <span className="text-terracotta">Indian</span>{" "}
-              <span className="text-deepBlue dark:text-gold">Culture</span>
-            </span>
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-terracotta to-deepBlue flex items-center justify-center text-white font-bold">A</div>
+            <div className="hidden md:block">
+              <span className="text-xl font-serif font-bold">
+                <span className="text-terracotta">Astiva</span>
+              </span>
+              <p className="text-xs text-gray-600 dark:text-gray-400 italic">Seek the Soul of India</p>
+            </div>
           </Link>
 
           {/* Search Bar (Desktop) */}
@@ -97,6 +99,12 @@ const Navbar: React.FC<NavbarProps> = ({ toggleTheme, isDarkMode }) => {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden mt-3 animate-fade-in">
+            <div className="mb-2">
+              <span className="text-lg font-serif font-bold">
+                <span className="text-terracotta">Astiva</span>
+              </span>
+              <p className="text-xs text-gray-600 dark:text-gray-400 italic">Seek the Soul of India</p>
+            </div>
             <SearchBar className="mb-4" />
             <nav className="flex flex-col space-y-2">
               <Link to="/" className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">Home</Link>

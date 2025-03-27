@@ -1,25 +1,28 @@
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, PlayCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PlayCircle, ExternalLink } from 'lucide-react';
 
 const virtualTourImages = [
   {
     id: 1,
     src: 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1200&h=400&q=80',
     title: 'Taj Mahal - Iconic Marble Mausoleum',
-    location: 'Agra, Uttar Pradesh'
+    location: 'Agra, Uttar Pradesh',
+    tourLink: 'https://www.360panoramas.co.uk/17/467/Taj_Mahal'
   },
   {
     id: 2,
     src: 'https://images.unsplash.com/photo-1477587458883-47145ed94245?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1200&h=400&q=80',
     title: 'Hawa Mahal - Palace of Winds',
-    location: 'Jaipur, Rajasthan'
+    location: 'Jaipur, Rajasthan',
+    tourLink: 'http://www.360cities.net/image/jaipur-hawa-mahal-facade#30.62,16.29,110.0'
   },
   {
     id: 3,
     src: 'https://images.unsplash.com/photo-1621351683756-3f30a45c6aca?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1200&h=400&q=80',
     title: 'Meenakshi Temple - Ancient Hindu Temple',
-    location: 'Madurai, Tamil Nadu'
+    location: 'Madurai, Tamil Nadu',
+    tourLink: 'https://www.view360.in/vtour-3dvr-madurai.html'
   }
 ];
 
@@ -54,6 +57,10 @@ const VirtualTour: React.FC = () => {
     setIsPlaying(!isPlaying);
   };
 
+  const openVirtualTour = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className={`relative overflow-hidden rounded-xl ${isFullScreen ? 'fixed inset-0 z-50 bg-black' : 'h-[400px]'}`}>
       {/* Slideshow */}
@@ -74,7 +81,14 @@ const VirtualTour: React.FC = () => {
             
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
               <h3 className="text-2xl font-serif font-semibold mb-1">{image.title}</h3>
-              <p className="text-sm text-gray-200">{image.location}</p>
+              <p className="text-sm text-gray-200 mb-2">{image.location}</p>
+              <button 
+                onClick={() => openVirtualTour(image.tourLink)}
+                className="flex items-center space-x-2 bg-primary/90 hover:bg-primary px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                <span>Experience 360° View</span>
+                <ExternalLink className="w-4 h-4" />
+              </button>
             </div>
           </div>
         ))}

@@ -1,15 +1,23 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, ArrowLeft, Star, Globe, Info } from 'lucide-react';
+import { MapPin, ArrowLeft, Star, Globe, Info, ExternalLink } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { culturalSites } from '@/data/culturalData';
+
+// Map of site IDs to 360° view URLs
+const virtualTourLinks: Record<string, string> = {
+  'taj-mahal': 'https://www.360panoramas.co.uk/17/467/Taj_Mahal',
+  'hawa-mahal': 'http://www.360cities.net/image/jaipur-hawa-mahal-facade#30.62,16.29,110.0',
+  'meenakshi-temple': 'https://www.view360.in/vtour-3dvr-madurai.html'
+};
 
 const Detail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [site, setSite] = useState(culturalSites.find(site => site.id === id));
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
   
   // Check for user's preferred color scheme on initial load
   useEffect(() => {
@@ -36,6 +44,25 @@ const Detail: React.FC = () => {
     window.scrollTo(0, 0);
   }, [id]);
 
+  // Load Google Maps API
+  useEffect(() => {
+    if (!site) return;
+    
+    // Check if Google Maps script is already loaded
+    const isScriptLoaded = document.querySelector('script[src*="maps.googleapis.com"]');
+    
+    if (!isScriptLoaded) {
+      const script = document.createElement('script');
+      script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&libraries=maps&v=beta";
+      script.defer = true;
+      script.async = true;
+      script.onload = () => setMapLoaded(true);
+      document.head.appendChild(script);
+    } else {
+      setMapLoaded(true);
+    }
+  }, [site]);
+
   if (!site) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -51,6 +78,9 @@ const Detail: React.FC = () => {
   const relatedSites = culturalSites
     .filter(s => (s.regionId === site.regionId || s.category === site.category) && s.id !== site.id)
     .slice(0, 3);
+
+  // Check if this site has a virtual tour link
+  const has360Tour = virtualTourLinks[site.id] !== undefined;
 
   return (
     <div className="min-h-screen">
@@ -108,6 +138,20 @@ const Detail: React.FC = () => {
                   </p>
                 </div>
 
+                {has360Tour && (
+                  <div className="mb-6">
+                    <a 
+                      href={virtualTourLinks[site.id]} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+                    >
+                      <span>Experience 360° Virtual Tour</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                )}
+
                 <h3 className="text-xl font-serif font-semibold mb-3 text-gray-900 dark:text-white">Facts & Trivia</h3>
                 <ul className="space-y-3 mb-6">
                   {site.facts.map((fact, index) => (
@@ -144,15 +188,23 @@ const Detail: React.FC = () => {
               {/* Map Location */}
               <div className="glass-card p-6 rounded-xl mb-8">
                 <h2 className="text-2xl font-serif font-semibold mb-4 text-gray-900 dark:text-white">Location</h2>
-                <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden relative">
-                  {/* This would be replaced with an actual map component */}
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500">
-                    <div className="text-center">
-                      <MapPin className="w-8 h-8 mx-auto mb-2" />
-                      <p>Interactive Map - {site.location}</p>
-                      <p className="text-sm mt-1">Coordinates: {site.coordinates.lat}, {site.coordinates.lng}</p>
+                <div className="h-64 rounded-lg overflow-hidden relative">
+                  {mapLoaded ? (
+                    <gmp-map
+                      center={`${site.coordinates.lat},${site.coordinates.lng}`}
+                      zoom="14"
+                      map-id="DEMO_MAP_ID"
+                      className="w-full h-full"
+                    ></gmp-map>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800">
+                      <div className="text-center">
+                        <MapPin className="w-8 h-8 mx-auto mb-2" />
+                        <p>Loading Map - {site.location}</p>
+                        <p className="text-sm mt-1">Coordinates: {site.coordinates.lat}, {site.coordinates.lng}</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -247,7 +299,7 @@ const Detail: React.FC = () => {
       <footer className="bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-8">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            © {new Date().getFullYear()} Indian Cultural Discovery Map. All rights reserved.
+            © {new Date().getFullYear()} Astiva - Seek the Soul of India. All rights reserved.
           </p>
         </div>
       </footer>

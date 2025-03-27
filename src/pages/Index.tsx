@@ -51,7 +51,7 @@ const Index: React.FC = () => {
       
       <main className="container mx-auto px-4 pt-6 pb-12 animate-fade-in">
         <h1 className="text-4xl md:text-5xl font-serif font-bold mb-2 text-deepBlue dark:text-white">
-          Discover India's <span className="text-gradient">Cultural Heritage</span>
+          <span className="text-terracotta">Astiva</span> - <span className="text-gradient">Seek the Soul of India</span>
         </h1>
         <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-3xl">
           Explore monuments, festivals, traditional arts, and historic sites through an interactive journey
@@ -88,7 +88,7 @@ const Index: React.FC = () => {
       <footer className="bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-8">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            © {new Date().getFullYear()} Indian Cultural Discovery Map. All rights reserved.
+            © {new Date().getFullYear()} Astiva - Seek the Soul of India. All rights reserved.
           </p>
         </div>
       </footer>
