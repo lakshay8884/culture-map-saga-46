@@ -1,20 +1,14 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 import { CulturalSite } from '@/data/culturalData';
 
 interface StoryCardProps {
   site: CulturalSite;
+  onClick?: () => void;
 }
 
-const StoryCard: React.FC<StoryCardProps> = ({ site }) => {
-  const navigate = useNavigate();
-  
-  const handleClick = () => {
-    navigate(`/detail/${site.id}`);
-  };
-
+const StoryCard: React.FC<StoryCardProps> = ({ site, onClick }) => {
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'monument':
@@ -37,7 +31,7 @@ const StoryCard: React.FC<StoryCardProps> = ({ site }) => {
   return (
     <div 
       className="w-72 flex-shrink-0 rounded-lg overflow-hidden shadow-md hover-lift cursor-pointer glass-card"
-      onClick={handleClick}
+      onClick={onClick}
     >
       <div className="relative h-40 overflow-hidden">
         <img 
@@ -66,10 +60,6 @@ const StoryCard: React.FC<StoryCardProps> = ({ site }) => {
         
         <button
           className="text-sm text-primary font-medium hover:underline focus:outline-none"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/detail/${site.id}`);
-          }}
         >
           View Details →
         </button>

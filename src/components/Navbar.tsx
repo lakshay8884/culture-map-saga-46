@@ -26,12 +26,16 @@ const Navbar: React.FC<NavbarProps> = ({ toggleTheme, isDarkMode }) => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-terracotta to-deepBlue flex items-center justify-center text-white font-bold">A</div>
+            <img 
+              src="/lovable-uploads/astitva-logo.png" 
+              alt="Astitva Logo" 
+              className="h-12 w-auto"
+            />
             <div className="hidden md:block">
               <span className="text-xl font-serif font-bold">
-                <span className="text-terracotta">Astiva</span>
+                <span className="text-terracotta">Astitva</span>
               </span>
-              <p className="text-xs text-gray-600 dark:text-gray-400 italic">Seek the Soul of India</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 italic">The Cultural and Rituals Aspects of India</p>
             </div>
           </Link>
 
@@ -99,11 +103,18 @@ const Navbar: React.FC<NavbarProps> = ({ toggleTheme, isDarkMode }) => {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden mt-3 animate-fade-in">
-            <div className="mb-2">
-              <span className="text-lg font-serif font-bold">
-                <span className="text-terracotta">Astiva</span>
-              </span>
-              <p className="text-xs text-gray-600 dark:text-gray-400 italic">Seek the Soul of India</p>
+            <div className="mb-2 flex items-center">
+              <img 
+                src="/lovable-uploads/astitva-logo.png" 
+                alt="Astitva Logo" 
+                className="h-8 w-auto mr-2"
+              />
+              <div>
+                <span className="text-lg font-serif font-bold">
+                  <span className="text-terracotta">Astitva</span>
+                </span>
+                <p className="text-xs text-gray-600 dark:text-gray-400 italic">The Cultural and Rituals Aspects of India</p>
+              </div>
             </div>
             <SearchBar className="mb-4" />
             <nav className="flex flex-col space-y-2">
