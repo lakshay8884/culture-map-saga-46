@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MapPin, ArrowLeft, Star, Globe, Info, ExternalLink } from 'lucide-react';
 import Navbar from '@/components/Navbar';
@@ -18,6 +17,7 @@ const Detail: React.FC = () => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   
   // Check for user's preferred color scheme on initial load
   useEffect(() => {
@@ -44,7 +44,6 @@ const Detail: React.FC = () => {
     window.scrollTo(0, 0);
   }, [id]);
 
-  // Load Google Maps API
   useEffect(() => {
     if (!site) return;
     
@@ -56,10 +55,46 @@ const Detail: React.FC = () => {
       script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&libraries=maps&v=beta";
       script.defer = true;
       script.async = true;
-      script.onload = () => setMapLoaded(true);
+      script.onload = () => {
+        setMapLoaded(true);
+        
+        // Create and insert the gmp-map element after the script is loaded
+        if (mapContainerRef.current) {
+          // Clear existing content
+          mapContainerRef.current.innerHTML = '';
+          
+          // Create the gmp-map element
+          const gmpMap = document.createElement('gmp-map');
+          gmpMap.setAttribute('center', `${site.coordinates.lat},${site.coordinates.lng}`);
+          gmpMap.setAttribute('zoom', '14');
+          gmpMap.setAttribute('map-id', 'DEMO_MAP_ID');
+          gmpMap.className = 'w-full h-full';
+          
+          // Append to the container
+          mapContainerRef.current.appendChild(gmpMap);
+        }
+      };
       document.head.appendChild(script);
     } else {
       setMapLoaded(true);
+      
+      // If script already loaded, create the map element directly
+      setTimeout(() => {
+        if (mapContainerRef.current && site) {
+          // Clear existing content
+          mapContainerRef.current.innerHTML = '';
+          
+          // Create the gmp-map element
+          const gmpMap = document.createElement('gmp-map');
+          gmpMap.setAttribute('center', `${site.coordinates.lat},${site.coordinates.lng}`);
+          gmpMap.setAttribute('zoom', '14');
+          gmpMap.setAttribute('map-id', 'DEMO_MAP_ID');
+          gmpMap.className = 'w-full h-full';
+          
+          // Append to the container
+          mapContainerRef.current.appendChild(gmpMap);
+        }
+      }, 100);
     }
   }, [site]);
 
@@ -189,22 +224,17 @@ const Detail: React.FC = () => {
               <div className="glass-card p-6 rounded-xl mb-8">
                 <h2 className="text-2xl font-serif font-semibold mb-4 text-gray-900 dark:text-white">Location</h2>
                 <div className="h-64 rounded-lg overflow-hidden relative">
-                  {mapLoaded ? (
-                    <gmp-map
-                      center={`${site.coordinates.lat},${site.coordinates.lng}`}
-                      zoom="14"
-                      map-id="DEMO_MAP_ID"
-                      className="w-full h-full"
-                    ></gmp-map>
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800">
-                      <div className="text-center">
-                        <MapPin className="w-8 h-8 mx-auto mb-2" />
-                        <p>Loading Map - {site.location}</p>
-                        <p className="text-sm mt-1">Coordinates: {site.coordinates.lat}, {site.coordinates.lng}</p>
+                  <div ref={mapContainerRef} className="w-full h-full">
+                    {!mapLoaded && (
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800">
+                        <div className="text-center">
+                          <MapPin className="w-8 h-8 mx-auto mb-2" />
+                          <p>Loading Map - {site?.location}</p>
+                          <p className="text-sm mt-1">Coordinates: {site?.coordinates.lat}, {site?.coordinates.lng}</p>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

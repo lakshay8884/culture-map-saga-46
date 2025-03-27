@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { culturalSites } from '@/data/culturalData';
 import { useNavigate } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
@@ -7,6 +6,7 @@ import { MapPin } from 'lucide-react';
 const Map: React.FC = () => {
   const [selectedSite, setSelectedSite] = useState<string | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,10 +18,46 @@ const Map: React.FC = () => {
       script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&libraries=maps&v=beta";
       script.defer = true;
       script.async = true;
-      script.onload = () => setMapLoaded(true);
+      script.onload = () => {
+        setMapLoaded(true);
+        
+        // Create and insert the gmp-map element after the script is loaded
+        if (mapContainerRef.current) {
+          // Clear existing content if any
+          mapContainerRef.current.innerHTML = '';
+          
+          // Create the gmp-map element
+          const gmpMap = document.createElement('gmp-map');
+          gmpMap.setAttribute('center', '20.5937,78.9629');
+          gmpMap.setAttribute('zoom', '4');
+          gmpMap.setAttribute('map-id', 'DEMO_MAP_ID');
+          gmpMap.className = 'w-full h-full';
+          
+          // Append to the container
+          mapContainerRef.current.appendChild(gmpMap);
+        }
+      };
       document.head.appendChild(script);
     } else {
       setMapLoaded(true);
+      
+      // If script already loaded, create the map element directly
+      setTimeout(() => {
+        if (mapContainerRef.current) {
+          // Clear existing content if any
+          mapContainerRef.current.innerHTML = '';
+          
+          // Create the gmp-map element
+          const gmpMap = document.createElement('gmp-map');
+          gmpMap.setAttribute('center', '20.5937,78.9629');
+          gmpMap.setAttribute('zoom', '4');
+          gmpMap.setAttribute('map-id', 'DEMO_MAP_ID');
+          gmpMap.className = 'w-full h-full';
+          
+          // Append to the container
+          mapContainerRef.current.appendChild(gmpMap);
+        }
+      }, 100);
     }
 
     return () => {
@@ -66,23 +102,16 @@ const Map: React.FC = () => {
   return (
     <div className="relative map-container overflow-hidden">
       {/* Google Maps Integration */}
-      {mapLoaded ? (
-        <div className="w-full h-full">
-          <gmp-map
-            center={`${indiaCenter.lat},${indiaCenter.lng}`}
-            zoom="4"
-            map-id="DEMO_MAP_ID"
-            className="w-full h-full"
-          ></gmp-map>
-        </div>
-      ) : (
-        <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-          <div className="text-center text-gray-500">
-            <p className="mb-2">Loading Map...</p>
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+      <div className="w-full h-full" ref={mapContainerRef}>
+        {!mapLoaded && (
+          <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <div className="text-center text-gray-500">
+              <p className="mb-2">Loading Map...</p>
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
       
       {/* Map Markers (custom overlay on top of Google Maps) */}
       <div className="absolute inset-0 pointer-events-none">
