@@ -71,50 +71,60 @@ const StoryCardList: React.FC = () => {
       </div>
 
       {/* Detail Dialog */}
-      <Dialog open={selectedSite !== null} onOpenChange={handleCloseDialog}>
-        <DialogContent className="sm:max-w-2xl">
-          {selectedSiteData && (
-            <div className="relative">
-              <button 
-                onClick={handleCloseDialog}
-                className="absolute right-2 top-2 w-8 h-8 rounded-full flex items-center justify-center bg-white/80 hover:bg-white z-10"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
-              <div className="h-64 overflow-hidden rounded-t-lg">
-                <img 
-                  src={selectedSiteData.imageUrl} 
-                  alt={selectedSiteData.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              
-              <div className="p-6">
-                <h3 className="text-2xl font-serif font-semibold mb-2">{selectedSiteData.name}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{selectedSiteData.location}</p>
-                <p className="mb-4">{selectedSiteData.description || selectedSiteData.shortDescription}</p>
+      {selectedSite !== null && (
+        <Dialog open={selectedSite !== null} onOpenChange={handleCloseDialog}>
+          <DialogContent className="sm:max-w-2xl">
+            {selectedSiteData && (
+              <div className="relative">
+                <button 
+                  onClick={handleCloseDialog}
+                  className="absolute right-2 top-2 w-8 h-8 rounded-full flex items-center justify-center bg-white/80 hover:bg-white z-10"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
                 
-                <div className="flex justify-between">
-                  <button 
-                    onClick={() => navigate(`/detail/${selectedSiteData.id}`)}
-                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
-                  >
-                    View Details
-                  </button>
-                  <button 
-                    onClick={handleCloseDialog}
-                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  >
-                    Close
-                  </button>
+                <div className="h-64 overflow-hidden rounded-t-lg">
+                  <img 
+                    src={selectedSiteData.imageUrl} 
+                    alt={selectedSiteData.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.onerror = null;
+                      target.src = "https://placehold.co/800x400/terracotta/white?text=Cultural+Site";
+                    }}
+                  />
+                </div>
+                
+                <div className="p-6">
+                  <h3 className="text-2xl font-serif font-semibold mb-2">{selectedSiteData.name}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{selectedSiteData.location}</p>
+                  <p className="mb-4">{selectedSiteData.description || selectedSiteData.shortDescription}</p>
+                  
+                  <div className="flex justify-between">
+                    <button 
+                      onClick={() => {
+                        navigate(`/detail/${selectedSiteData.id}`);
+                        handleCloseDialog();
+                      }}
+                      className="px-4 py-2 bg-terracotta text-white rounded-md hover:bg-terracotta/90 transition-colors"
+                    >
+                      View Details
+                    </button>
+                    <button 
+                      onClick={handleCloseDialog}
+                      className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

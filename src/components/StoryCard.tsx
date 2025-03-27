@@ -38,6 +38,11 @@ const StoryCard: React.FC<StoryCardProps> = ({ site, onClick }) => {
           src={site.imageUrl} 
           alt={site.name}
           className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.onerror = null;
+            target.src = "https://placehold.co/400x300/terracotta/white?text=Cultural+Site";
+          }}
         />
         <div className="absolute top-3 right-3">
           <span className={`text-xs px-2 py-1 rounded-full ${getCategoryColor(site.category)}`}>
@@ -59,7 +64,7 @@ const StoryCard: React.FC<StoryCardProps> = ({ site, onClick }) => {
         </p>
         
         <button
-          className="text-sm text-primary font-medium hover:underline focus:outline-none"
+          className="text-sm text-terracotta font-medium hover:underline focus:outline-none"
         >
           View Details →
         </button>

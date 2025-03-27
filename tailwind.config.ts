@@ -63,10 +63,10 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Custom colors for Indian Cultural Dashboard
-				terracotta: "#CC5500",
-				deepBlue: "#0F4C81",
-				gold: "#D4AF37",
+				// Custom colors for Astitva Cultural Dashboard
+				terracotta: "#D73627", // Red from logo
+				deepBlue: "#264B96", // Blue from logo
+				gold: "#FAA919", // Yellow/Golden from logo
 				maroon: "#800000",
 				emerald: "#046307",
 				sandstone: "#F4EBD0",

@@ -27,7 +27,7 @@ const Navbar: React.FC<NavbarProps> = ({ toggleTheme, isDarkMode }) => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <img 
-              src="/lovable-uploads/astitva-logo.png" 
+              src="/lovable-uploads/b9d75b12-2717-4972-a219-18db3dd5ea19.png" 
               alt="Astitva Logo" 
               className="h-12 w-auto"
             />
@@ -105,7 +105,7 @@ const Navbar: React.FC<NavbarProps> = ({ toggleTheme, isDarkMode }) => {
           <div className="md:hidden mt-3 animate-fade-in">
             <div className="mb-2 flex items-center">
               <img 
-                src="/lovable-uploads/astitva-logo.png" 
+                src="/lovable-uploads/b9d75b12-2717-4972-a219-18db3dd5ea19.png" 
                 alt="Astitva Logo" 
                 className="h-8 w-auto mr-2"
               />
