@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { culturalSites } from '@/data/culturalData';
 import { useNavigate } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
+import { loadGoogleMapsScript, safeRemoveScript, resetGoogleMapsLoading } from '@/utils/mapUtils';
 
 declare global {
   interface Window {
@@ -11,50 +12,13 @@ declare global {
   }
 }
 
-const API_KEY = 'AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg';
-
 const Map: React.FC = () => {
   const [selectedSite, setSelectedSite] = useState<string | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
-  const scriptRef = useRef<HTMLScriptElement | null>(null);
   const navigate = useNavigate();
-
-  const loadGoogleMapsScript = () => {
-    return new Promise<void>((resolve, reject) => {
-      try {
-        // Check if Google Maps script is already loaded
-        if (window.google?.maps) {
-          console.log("Google Maps already loaded, reusing existing instance");
-          resolve();
-          return;
-        }
-
-        console.log("Loading Google Maps script");
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&callback=initMap&libraries=maps&v=weekly`;
-        script.defer = true;
-        script.async = true;
-        script.onerror = () => {
-          console.error("Failed to load Google Maps script");
-          reject(new Error('Google Maps script failed to load'));
-        };
-        script.onload = () => {
-          console.log("Google Maps script loaded successfully");
-          resolve();
-        };
-
-        // Store the script reference
-        scriptRef.current = script;
-        document.head.appendChild(script);
-      } catch (error) {
-        console.error("Error in loadGoogleMapsScript:", error);
-        reject(error);
-      }
-    });
-  };
 
   const createMarkers = () => {
     if (!mapInstanceRef.current || !window.google?.maps?.Marker) {
@@ -121,7 +85,7 @@ const Map: React.FC = () => {
     };
 
     // Load the Google Maps script
-    loadGoogleMapsScript().catch(error => {
+    loadGoogleMapsScript('initMap').catch(error => {
       console.error("Error loading Google Maps:", error);
     });
 
@@ -138,29 +102,15 @@ const Map: React.FC = () => {
       // Clear map instance
       mapInstanceRef.current = null;
       
-      // Remove the script element if it exists and we created it
-      if (scriptRef.current) {
-        try {
-          // Check if the script is still in the document before trying to remove it
-          const scriptInDocument = document.head.contains(scriptRef.current);
-          if (scriptInDocument) {
-            document.head.removeChild(scriptRef.current);
-            console.log("Google Maps script removed from DOM");
-          } else {
-            console.log("Script not in document, skipping removal");
-          }
-        } catch (e) {
-          console.error("Error removing script:", e);
-        }
-        scriptRef.current = null;
-      }
-      
       // Clean up the global initMap function
       if ('initMap' in window) {
         // @ts-ignore
         window.initMap = undefined;
         console.log("Cleaned up global initMap function");
       }
+      
+      // Reset the loading state
+      resetGoogleMapsLoading();
     };
   }, []);
 

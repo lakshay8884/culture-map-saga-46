@@ -2,12 +2,14 @@
 import React, { useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import StoryCard from './StoryCard';
-import { culturalSites } from '@/data/culturalData';
+import { culturalSites, CulturalSite } from '@/data/culturalData';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useNavigate } from 'react-router-dom';
 
 const StoryCardList: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [selectedSite, setSelectedSite] = useState<number | null>(null);
+  const [selectedSite, setSelectedSite] = useState<string | null>(null);
+  const navigate = useNavigate();
   
   const featuredSites = culturalSites.filter(site => site.isFeatured);
 
@@ -18,7 +20,7 @@ const StoryCardList: React.FC = () => {
     }
   };
 
-  const handleCardClick = (siteId: number) => {
+  const handleCardClick = (siteId: string) => {
     setSelectedSite(siteId);
   };
 
@@ -94,10 +96,16 @@ const StoryCardList: React.FC = () => {
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{selectedSiteData.location}</p>
                 <p className="mb-4">{selectedSiteData.description || selectedSiteData.shortDescription}</p>
                 
-                <div className="flex justify-end">
+                <div className="flex justify-between">
+                  <button 
+                    onClick={() => navigate(`/detail/${selectedSiteData.id}`)}
+                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+                  >
+                    View Details
+                  </button>
                   <button 
                     onClick={handleCloseDialog}
-                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                   >
                     Close
                   </button>

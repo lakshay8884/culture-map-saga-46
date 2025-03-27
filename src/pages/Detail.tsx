@@ -1,9 +1,9 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MapPin, ArrowLeft, Star, Globe, Info, ExternalLink } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { culturalSites } from '@/data/culturalData';
+import { loadGoogleMapsScript, MAPS_API_KEY, resetGoogleMapsLoading } from '@/utils/mapUtils';
 
 // Map of site IDs to 360° view URLs
 const virtualTourLinks: Record<string, string> = {
@@ -19,8 +19,6 @@ declare global {
   }
 }
 
-const API_KEY = 'AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg';
-
 const Detail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [site, setSite] = useState(culturalSites.find(site => site.id === id));
@@ -29,9 +27,7 @@ const Detail: React.FC = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const detailMapContainerRef = useRef<HTMLDivElement>(null);
   const detailMapInstanceRef = useRef<google.maps.Map | null>(null);
-  const scriptRef = useRef<HTMLScriptElement | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
-  const mapLoaderPromiseRef = useRef<Promise<void> | null>(null);
   
   // Check for user's preferred color scheme on initial load
   useEffect(() => {
@@ -50,30 +46,6 @@ const Detail: React.FC = () => {
         document.documentElement.classList.remove('dark');
       }
       return newMode;
-    });
-  };
-
-  // Function to load the Google Maps script
-  const loadGoogleMapsScript = () => {
-    return new Promise<void>((resolve, reject) => {
-      try {
-        // Check if Google Maps script is already loaded
-        if (window.google?.maps) {
-          resolve();
-          return;
-        }
-
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&callback=initDetailMap&libraries=maps&v=weekly`;
-        script.defer = true;
-        script.async = true;
-        script.onerror = () => reject(new Error('Google Maps script failed to load'));
-        script.onload = () => resolve();
-        document.head.appendChild(script);
-        scriptRef.current = script;
-      } catch (error) {
-        reject(error);
-      }
     });
   };
 
@@ -152,30 +124,15 @@ const Detail: React.FC = () => {
     };
 
     if (site) {
-      // Load Google Maps if not already loaded
-      if (!mapLoaderPromiseRef.current) {
-        mapLoaderPromiseRef.current = loadGoogleMapsScript();
-      } else {
-        // If the script is already loaded, initialize the map directly
-        if (window.google?.maps) {
-          initializeDetailMap();
-        }
-      }
+      // Load Google Maps
+      loadGoogleMapsScript('initDetailMap').catch(error => {
+        console.error("Error loading Google Maps:", error);
+      });
     }
     
     return () => {
       // Clean up resources
       cleanupMap();
-      
-      // Remove script element if it exists and we created it
-      if (scriptRef.current && document.head.contains(scriptRef.current)) {
-        try {
-          document.head.removeChild(scriptRef.current);
-        } catch (e) {
-          console.warn('Failed to remove script:', e);
-        }
-        scriptRef.current = null;
-      }
       
       // Remove global initDetailMap function
       if ('initDetailMap' in window) {
@@ -183,8 +140,8 @@ const Detail: React.FC = () => {
         window.initDetailMap = undefined;
       }
       
-      // Reset loader promise
-      mapLoaderPromiseRef.current = null;
+      // Reset the loading state
+      resetGoogleMapsLoading();
     };
   }, [site]);
 

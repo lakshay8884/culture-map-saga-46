@@ -8,6 +8,8 @@ export const MAPS_API_KEY = 'AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg';
 
 // Tracks if a script loading is in progress
 let loadingPromise: Promise<void> | null = null;
+// Tracks the currently loaded script element
+let currentScriptElement: HTMLScriptElement | null = null;
 
 /**
  * Loads the Google Maps script if not already loaded
@@ -36,6 +38,7 @@ export const loadGoogleMapsScript = (callbackName: string): Promise<void> => {
       script.onerror = () => {
         console.error("Failed to load Google Maps script");
         loadingPromise = null; // Reset for retry
+        currentScriptElement = null;
         reject(new Error('Google Maps script failed to load'));
       };
       script.onload = () => {
@@ -43,10 +46,13 @@ export const loadGoogleMapsScript = (callbackName: string): Promise<void> => {
         resolve();
       };
 
+      // Store the current script element for later cleanup
+      currentScriptElement = script;
       document.head.appendChild(script);
     } catch (error) {
       console.error("Error in loadGoogleMapsScript:", error);
       loadingPromise = null; // Reset for retry
+      currentScriptElement = null;
       reject(error);
     }
   });
@@ -79,4 +85,18 @@ export const safeRemoveScript = (script: HTMLScriptElement | null): void => {
  */
 export const resetGoogleMapsLoading = (): void => {
   loadingPromise = null;
+};
+
+/**
+ * Gets the current script element
+ */
+export const getCurrentScriptElement = (): HTMLScriptElement | null => {
+  return currentScriptElement;
+};
+
+/**
+ * Clears the current script element reference
+ */
+export const clearCurrentScriptElement = (): void => {
+  currentScriptElement = null;
 };
