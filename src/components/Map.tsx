@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { culturalSites } from '@/data/culturalData';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +8,7 @@ const Map: React.FC = () => {
   const [selectedSite, setSelectedSite] = useState<string | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const scriptRef = useRef<HTMLScriptElement | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,6 +40,7 @@ const Map: React.FC = () => {
         }
       };
       document.head.appendChild(script);
+      scriptRef.current = script;
     } else {
       setMapLoaded(true);
       
@@ -61,10 +64,14 @@ const Map: React.FC = () => {
     }
 
     return () => {
-      // Clean up if component unmounts
-      const script = document.querySelector('script[src*="maps.googleapis.com"]');
-      if (script && script.parentNode) {
-        script.parentNode.removeChild(script);
+      // Safe cleanup - only remove the script if it's our script and it's still in the document
+      if (scriptRef.current && document.head.contains(scriptRef.current)) {
+        document.head.removeChild(scriptRef.current);
+      }
+      
+      // Also clean up the map container
+      if (mapContainerRef.current) {
+        mapContainerRef.current.innerHTML = '';
       }
     };
   }, []);

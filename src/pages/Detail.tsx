@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MapPin, ArrowLeft, Star, Globe, Info, ExternalLink } from 'lucide-react';
@@ -18,6 +19,7 @@ const Detail: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const scriptRef = useRef<HTMLScriptElement | null>(null);
   
   // Check for user's preferred color scheme on initial load
   useEffect(() => {
@@ -47,6 +49,9 @@ const Detail: React.FC = () => {
   useEffect(() => {
     if (!site) return;
     
+    // Reset map loaded state when site changes
+    setMapLoaded(false);
+    
     // Check if Google Maps script is already loaded
     const isScriptLoaded = document.querySelector('script[src*="maps.googleapis.com"]');
     
@@ -59,7 +64,7 @@ const Detail: React.FC = () => {
         setMapLoaded(true);
         
         // Create and insert the gmp-map element after the script is loaded
-        if (mapContainerRef.current) {
+        if (mapContainerRef.current && site) {
           // Clear existing content
           mapContainerRef.current.innerHTML = '';
           
@@ -75,6 +80,7 @@ const Detail: React.FC = () => {
         }
       };
       document.head.appendChild(script);
+      scriptRef.current = script;
     } else {
       setMapLoaded(true);
       
@@ -96,6 +102,18 @@ const Detail: React.FC = () => {
         }
       }, 100);
     }
+    
+    return () => {
+      // Safe cleanup - only remove the script if it's our script and it's still in the document
+      if (scriptRef.current && document.head.contains(scriptRef.current)) {
+        document.head.removeChild(scriptRef.current);
+      }
+      
+      // Also clean up the map container
+      if (mapContainerRef.current) {
+        mapContainerRef.current.innerHTML = '';
+      }
+    };
   }, [site]);
 
   if (!site) {
