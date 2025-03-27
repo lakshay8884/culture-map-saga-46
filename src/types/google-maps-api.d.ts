@@ -7,6 +7,8 @@ declare namespace google {
       setCenter(latLng: LatLng | LatLngLiteral): void;
       setZoom(zoom: number): void;
       panTo(latLng: LatLng | LatLngLiteral): void;
+      getCenter(): LatLng;
+      getZoom(): number;
     }
 
     class Marker {
@@ -33,13 +35,72 @@ declare namespace google {
       mapId?: string;
       disableDefaultUI?: boolean;
       zoomControl?: boolean;
+      mapTypeControl?: boolean;
+      streetViewControl?: boolean;
+      rotateControl?: boolean;
+      fullscreenControl?: boolean;
+      gestureHandling?: string;
+      styles?: any[];
     }
 
     interface MarkerOptions {
       position: LatLng | LatLngLiteral;
       map?: Map;
       title?: string;
-      icon?: string;
+      icon?: string | Icon | Symbol;
+      label?: string | MarkerLabel;
+      draggable?: boolean;
+      clickable?: boolean;
+      visible?: boolean;
+      zIndex?: number;
+    }
+
+    interface Icon {
+      url: string;
+      size?: Size;
+      scaledSize?: Size;
+      origin?: Point;
+      anchor?: Point;
+    }
+
+    interface Size {
+      width: number;
+      height: number;
+      equals(other: Size): boolean;
+      toString(): string;
+    }
+
+    interface Point {
+      x: number;
+      y: number;
+      equals(other: Point): boolean;
+      toString(): string;
+    }
+
+    interface Symbol {
+      path: string | SymbolPath;
+      fillColor?: string;
+      fillOpacity?: number;
+      scale?: number;
+      strokeColor?: string;
+      strokeOpacity?: number;
+      strokeWeight?: number;
+    }
+
+    enum SymbolPath {
+      BACKWARD_CLOSED_ARROW,
+      BACKWARD_OPEN_ARROW,
+      CIRCLE,
+      FORWARD_CLOSED_ARROW,
+      FORWARD_OPEN_ARROW
+    }
+
+    interface MarkerLabel {
+      text: string;
+      color?: string;
+      fontFamily?: string;
+      fontSize?: string;
+      fontWeight?: string;
     }
 
     interface MapsEventListener {

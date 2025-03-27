@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { culturalSites } from '@/data/culturalData';
 import { useNavigate } from 'react-router-dom';
@@ -19,37 +20,53 @@ const Map: React.FC = () => {
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
-  const mapLoaderPromiseRef = useRef<Promise<void> | null>(null);
   const navigate = useNavigate();
 
   const loadGoogleMapsScript = () => {
     return new Promise<void>((resolve, reject) => {
       try {
+        // Check if Google Maps script is already loaded
         if (window.google?.maps) {
+          console.log("Google Maps already loaded, reusing existing instance");
           resolve();
           return;
         }
 
+        console.log("Loading Google Maps script");
         const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&callback=initMap&libraries=maps&v=weekly`;
         script.defer = true;
         script.async = true;
-        script.onerror = () => reject(new Error('Google Maps script failed to load'));
-        script.onload = () => resolve();
-        document.head.appendChild(script);
+        script.onerror = () => {
+          console.error("Failed to load Google Maps script");
+          reject(new Error('Google Maps script failed to load'));
+        };
+        script.onload = () => {
+          console.log("Google Maps script loaded successfully");
+          resolve();
+        };
+
+        // Store the script reference
         scriptRef.current = script;
+        document.head.appendChild(script);
       } catch (error) {
+        console.error("Error in loadGoogleMapsScript:", error);
         reject(error);
       }
     });
   };
 
   const createMarkers = () => {
-    if (!mapInstanceRef.current || !window.google?.maps?.Marker) return;
+    if (!mapInstanceRef.current || !window.google?.maps?.Marker) {
+      console.log("Cannot create markers, map instance or Marker not available");
+      return;
+    }
     
+    // Clear existing markers
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
     
+    // Create new markers
     culturalSites.forEach(site => {
       const marker = new window.google.maps.Marker({
         position: { lat: site.coordinates.lat, lng: site.coordinates.lng },
@@ -66,7 +83,10 @@ const Map: React.FC = () => {
   };
 
   const initializeMap = async () => {
-    if (!mapContainerRef.current) return;
+    if (!mapContainerRef.current) {
+      console.log("Map container ref not available");
+      return;
+    }
     
     try {
       if (!window.google?.maps?.importLibrary) {
@@ -87,38 +107,60 @@ const Map: React.FC = () => {
 
       createMarkers();
       setMapLoaded(true);
+      console.log("Map initialized successfully");
     } catch (error) {
       console.error('Error initializing map:', error);
     }
   };
 
   useEffect(() => {
+    // Define the global callback function for the Google Maps script
     window.initMap = async function() {
+      console.log("initMap callback triggered");
       await initializeMap();
     };
 
-    if (!mapLoaderPromiseRef.current) {
-      mapLoaderPromiseRef.current = loadGoogleMapsScript();
-    }
+    // Load the Google Maps script
+    loadGoogleMapsScript().catch(error => {
+      console.error("Error loading Google Maps:", error);
+    });
 
+    // Cleanup function
     return () => {
+      console.log("Map component unmounting, cleaning up resources");
+      
+      // Clear markers
       markersRef.current.forEach(marker => {
         if (marker) marker.setMap(null);
       });
       markersRef.current = [];
       
+      // Clear map instance
       mapInstanceRef.current = null;
       
-      if (scriptRef.current && document.head.contains(scriptRef.current)) {
-        document.head.removeChild(scriptRef.current);
+      // Remove the script element if it exists and we created it
+      if (scriptRef.current) {
+        try {
+          // Check if the script is still in the document before trying to remove it
+          const scriptInDocument = document.head.contains(scriptRef.current);
+          if (scriptInDocument) {
+            document.head.removeChild(scriptRef.current);
+            console.log("Google Maps script removed from DOM");
+          } else {
+            console.log("Script not in document, skipping removal");
+          }
+        } catch (e) {
+          console.error("Error removing script:", e);
+        }
         scriptRef.current = null;
       }
       
+      // Clean up the global initMap function
       if ('initMap' in window) {
+        // @ts-ignore
         window.initMap = undefined;
+        console.log("Cleaned up global initMap function");
       }
-      
-      mapLoaderPromiseRef.current = null;
     };
   }, []);
 
