@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MapPin, ArrowLeft, Star, Globe, Info, ExternalLink } from 'lucide-react';
@@ -18,6 +19,8 @@ declare global {
   }
 }
 
+const API_KEY = 'AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg';
+
 const Detail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [site, setSite] = useState(culturalSites.find(site => site.id === id));
@@ -25,8 +28,10 @@ const Detail: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const detailMapContainerRef = useRef<HTMLDivElement>(null);
-  const detailMapInstanceRef = useRef<any>(null);
+  const detailMapInstanceRef = useRef<google.maps.Map | null>(null);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
+  const mapLoaderPromiseRef = useRef<Promise<void> | null>(null);
   
   // Check for user's preferred color scheme on initial load
   useEffect(() => {
@@ -48,73 +53,138 @@ const Detail: React.FC = () => {
     });
   };
 
+  // Function to load the Google Maps script
+  const loadGoogleMapsScript = () => {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        // Check if Google Maps script is already loaded
+        if (window.google?.maps) {
+          resolve();
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&callback=initDetailMap&libraries=maps&v=weekly`;
+        script.defer = true;
+        script.async = true;
+        script.onerror = () => reject(new Error('Google Maps script failed to load'));
+        script.onload = () => resolve();
+        document.head.appendChild(script);
+        scriptRef.current = script;
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
+
+  // Initialize the map for the detail page
+  const initializeDetailMap = async () => {
+    if (!detailMapContainerRef.current || !site) return;
+    
+    try {
+      if (!window.google?.maps?.importLibrary) {
+        console.error('Google Maps API not loaded correctly');
+        return;
+      }
+
+      const { Map, Marker } = await window.google.maps.importLibrary("maps") as google.maps.MapsLibrary;
+      const siteLocation = { 
+        lat: site.coordinates.lat, 
+        lng: site.coordinates.lng 
+      };
+      
+      detailMapInstanceRef.current = new Map(detailMapContainerRef.current, {
+        center: siteLocation,
+        zoom: 14,
+        mapId: 'DEMO_MAP_ID',
+        zoomControl: true,
+      });
+
+      // Add a marker for the site location
+      if (Marker) {
+        // Remove previous marker if it exists
+        if (markerRef.current) {
+          markerRef.current.setMap(null);
+        }
+        
+        markerRef.current = new Marker({
+          position: siteLocation,
+          map: detailMapInstanceRef.current,
+          title: site.name,
+        });
+      }
+      
+      setMapLoaded(true);
+    } catch (error) {
+      console.error('Error initializing detail map:', error);
+    }
+  };
+
   useEffect(() => {
     setSite(culturalSites.find(site => site.id === id));
     window.scrollTo(0, 0);
-  }, [id]);
-
-  useEffect(() => {
-    if (!site) return;
-
-    // Reset map loaded state when site changes
+    
+    // Reset map loaded state
     setMapLoaded(false);
     
-    // Define the initDetailMap function
+    return () => {
+      // Clean up resources when id changes
+      cleanupMap();
+    };
+  }, [id]);
+
+  // Clean up map resources
+  const cleanupMap = () => {
+    // Remove marker
+    if (markerRef.current) {
+      markerRef.current.setMap(null);
+      markerRef.current = null;
+    }
+    
+    // Reset map instance
+    detailMapInstanceRef.current = null;
+  };
+
+  useEffect(() => {
+    // Define the global initDetailMap function
     window.initDetailMap = async function() {
-      if (!detailMapContainerRef.current || !site) return;
-      setMapLoaded(true);
-
-      try {
-        if (window.google?.maps?.importLibrary) {
-          const { Map } = await window.google.maps.importLibrary("maps");
-          const siteLocation = { 
-            lat: site.coordinates.lat, 
-            lng: site.coordinates.lng 
-          };
-          
-          detailMapInstanceRef.current = new Map(detailMapContainerRef.current, {
-            center: siteLocation,
-            zoom: 14,
-            mapId: 'DEMO_MAP_ID',
-            zoomControl: true,
-          });
-
-          // Add a marker for the site location
-          if (window.google?.maps?.Marker) {
-            new window.google.maps.Marker({
-              position: siteLocation,
-              map: detailMapInstanceRef.current,
-              title: site.name,
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error initializing detail map:', error);
-      }
+      await initializeDetailMap();
     };
 
-    // Check if Google Maps script is already loaded
-    const isScriptLoaded = document.querySelector('script[src*="maps.googleapis.com"]');
-    
-    if (!isScriptLoaded) {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initDetailMap&libraries=maps&v=weekly`;
-      script.defer = true;
-      script.async = true;
-      document.head.appendChild(script);
-      scriptRef.current = script;
-    } else {
-      // If script already loaded, call initDetailMap directly
-      if (window.google?.maps) {
-        window.initDetailMap();
+    if (site) {
+      // Load Google Maps if not already loaded
+      if (!mapLoaderPromiseRef.current) {
+        mapLoaderPromiseRef.current = loadGoogleMapsScript();
+      } else {
+        // If the script is already loaded, initialize the map directly
+        if (window.google?.maps) {
+          initializeDetailMap();
+        }
       }
     }
     
     return () => {
-      // Safe cleanup - only remove our script
+      // Clean up resources
+      cleanupMap();
+      
+      // Remove script element if it exists and we created it
       if (scriptRef.current && document.head.contains(scriptRef.current)) {
-        document.head.removeChild(scriptRef.current);
+        try {
+          document.head.removeChild(scriptRef.current);
+        } catch (e) {
+          console.warn('Failed to remove script:', e);
+        }
+        scriptRef.current = null;
       }
+      
+      // Remove global initDetailMap function
+      if ('initDetailMap' in window) {
+        // @ts-ignore
+        window.initDetailMap = undefined;
+      }
+      
+      // Reset loader promise
+      mapLoaderPromiseRef.current = null;
     };
   }, [site]);
 
@@ -193,7 +263,7 @@ const Detail: React.FC = () => {
                   </p>
                 </div>
 
-                {has360Tour && (
+                {virtualTourLinks[site.id] && (
                   <div className="mb-6">
                     <a 
                       href={virtualTourLinks[site.id]} 

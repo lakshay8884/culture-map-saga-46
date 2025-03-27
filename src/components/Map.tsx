@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { culturalSites } from '@/data/culturalData';
 import { useNavigate } from 'react-router-dom';
@@ -11,91 +10,118 @@ declare global {
   }
 }
 
+const API_KEY = 'AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg';
+
 const Map: React.FC = () => {
   const [selectedSite, setSelectedSite] = useState<string | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const markersRef = useRef<google.maps.Marker[]>([]);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
+  const mapLoaderPromiseRef = useRef<Promise<void> | null>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Define the initMap function in the global scope
-    window.initMap = async function() {
-      if (!mapContainerRef.current) return;
-      setMapLoaded(true);
-
+  const loadGoogleMapsScript = () => {
+    return new Promise<void>((resolve, reject) => {
       try {
-        // Use dynamic import if available
-        if (window.google?.maps?.importLibrary) {
-          const { Map } = await window.google.maps.importLibrary("maps");
-          const indiaCenter = { lat: 20.5937, lng: 78.9629 };
-          
-          mapInstanceRef.current = new Map(mapContainerRef.current, {
-            center: indiaCenter,
-            zoom: 4,
-            mapId: 'DEMO_MAP_ID',
-            disableDefaultUI: true,
-            zoomControl: true,
-          });
-
-          // Add markers for cultural sites
-          if (window.google?.maps?.Marker) {
-            culturalSites.forEach(site => {
-              const marker = new window.google.maps.Marker({
-                position: { lat: site.coordinates.lat, lng: site.coordinates.lng },
-                map: mapInstanceRef.current,
-                title: site.name,
-              });
-
-              // Add click event to markers
-              marker.addListener('click', () => {
-                handleMarkerClick(site.id);
-              });
-
-              markersRef.current.push(marker);
-            });
-          }
+        if (window.google?.maps) {
+          resolve();
+          return;
         }
+
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&callback=initMap&libraries=maps&v=weekly`;
+        script.defer = true;
+        script.async = true;
+        script.onerror = () => reject(new Error('Google Maps script failed to load'));
+        script.onload = () => resolve();
+        document.head.appendChild(script);
+        scriptRef.current = script;
       } catch (error) {
-        console.error('Error initializing map:', error);
+        reject(error);
       }
+    });
+  };
+
+  const createMarkers = () => {
+    if (!mapInstanceRef.current || !window.google?.maps?.Marker) return;
+    
+    markersRef.current.forEach(marker => marker.setMap(null));
+    markersRef.current = [];
+    
+    culturalSites.forEach(site => {
+      const marker = new window.google.maps.Marker({
+        position: { lat: site.coordinates.lat, lng: site.coordinates.lng },
+        map: mapInstanceRef.current,
+        title: site.name,
+      });
+
+      marker.addListener('click', () => {
+        handleMarkerClick(site.id);
+      });
+
+      markersRef.current.push(marker);
+    });
+  };
+
+  const initializeMap = async () => {
+    if (!mapContainerRef.current) return;
+    
+    try {
+      if (!window.google?.maps?.importLibrary) {
+        console.error('Google Maps API not loaded correctly');
+        return;
+      }
+
+      const { Map } = await window.google.maps.importLibrary("maps") as google.maps.MapsLibrary;
+      const indiaCenter = { lat: 20.5937, lng: 78.9629 };
+      
+      mapInstanceRef.current = new Map(mapContainerRef.current, {
+        center: indiaCenter,
+        zoom: 4,
+        mapId: 'DEMO_MAP_ID',
+        disableDefaultUI: true,
+        zoomControl: true,
+      });
+
+      createMarkers();
+      setMapLoaded(true);
+    } catch (error) {
+      console.error('Error initializing map:', error);
+    }
+  };
+
+  useEffect(() => {
+    window.initMap = async function() {
+      await initializeMap();
     };
 
-    // Check if Google Maps script is already loaded
-    const isScriptLoaded = document.querySelector('script[src*="maps.googleapis.com"]');
-    
-    if (!isScriptLoaded) {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initMap&libraries=maps&v=weekly`;
-      script.defer = true;
-      script.async = true;
-      document.head.appendChild(script);
-      scriptRef.current = script;
-    } else {
-      // If script already loaded, call initMap directly
-      if (window.google?.maps) {
-        window.initMap();
-      }
+    if (!mapLoaderPromiseRef.current) {
+      mapLoaderPromiseRef.current = loadGoogleMapsScript();
     }
 
     return () => {
-      // Clean up markers
-      if (markersRef.current.length > 0) {
-        markersRef.current.forEach(marker => {
-          if (marker) marker.setMap(null);
-        });
-        markersRef.current = [];
-      }
+      markersRef.current.forEach(marker => {
+        if (marker) marker.setMap(null);
+      });
+      markersRef.current = [];
       
-      // Safe cleanup - only remove our script
+      mapInstanceRef.current = null;
+      
       if (scriptRef.current && document.head.contains(scriptRef.current)) {
         document.head.removeChild(scriptRef.current);
+        scriptRef.current = null;
       }
+      
+      if ('initMap' in window) {
+        window.initMap = undefined;
+      }
+      
+      mapLoaderPromiseRef.current = null;
     };
   }, []);
-  
+
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'monument':
@@ -125,7 +151,6 @@ const Map: React.FC = () => {
 
   return (
     <div className="relative map-container overflow-hidden">
-      {/* Google Maps Container */}
       <div className="w-full h-full" id="map" ref={mapContainerRef}>
         {!mapLoaded && (
           <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
@@ -137,7 +162,6 @@ const Map: React.FC = () => {
         )}
       </div>
       
-      {/* Info Popup */}
       {selectedSite && (
         <div 
           className="absolute z-20 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden animate-fade-in glass-card pointer-events-auto"
@@ -173,7 +197,6 @@ const Map: React.FC = () => {
         </div>
       )}
       
-      {/* Information message */}
       {!selectedSite && !mapLoaded && (
         <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-gray-400 dark:text-gray-500 pointer-events-none">
           <p className="mb-2 font-medium">Interactive Map Preview</p>

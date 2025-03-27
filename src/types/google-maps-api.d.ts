@@ -48,6 +48,7 @@ declare namespace google {
 
     interface MapsLibrary {
       Map: typeof Map;
+      Marker: typeof Marker;
     }
 
     function importLibrary(libraryName: string): Promise<MapsLibrary>;
